@@ -1,0 +1,14 @@
+.table > :not(:first-child) {
+  border-top: none;
+}
+
+.bt-5 {
+  border-top-width: 5px;
+}
+
+/* căn chỉnh form login nằm giữa màn hình */
+html,
+body,
+#root {
+  height: 100%;
+}
