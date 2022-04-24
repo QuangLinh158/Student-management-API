@@ -73,8 +73,8 @@ const Login = (props) => {
 
                             <form onSubmit={formSubmitHandler}>
 
-                                <Input label="UserName" inputRef={usernameRef} type="Text" id="name"  placeholder="Enter your name..."/>
-                                <Input label="PassWord" inputRef={userpasswordRef} type="Password" id="password" placeholder="Enter your password..."/>
+                                <Input label="UserName" inputRef={usernameRef} type="text" id="name"  placeholder="Enter your name..." required/>
+                                <Input label="PassWord" inputRef={userpasswordRef} type="password" id="password" placeholder="Enter your password..." required/>
                                 {/* <Input label="UserNote" id="note" rows="3"  placeholder="Enter your note..."/> */}
                                 <div className="row">
                                     <div className="offset-sm-3 col-auto">

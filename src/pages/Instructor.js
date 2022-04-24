@@ -249,13 +249,13 @@ const Instructor = (props) => {
                         // name="gender"  value="0" 
                         checked={formik.values.gender===0}
                         defaultValue={0}
-                        onClick={radioChange}
+                        onChange={radioChange}
                     />
                     <RadioBtn label="FeMale" id="RadioFeMale" 
                         // name="gender"  value="1" 
                         checked={formik.values.gender===1}
                         defaultValue={1}
-                        onClick={radioChange}
+                        onChange={radioChange}
                     />
                 </div>
                 <Input label="Phone" id="textInstructorPhone" 
@@ -280,7 +280,7 @@ const Instructor = (props) => {
         btn1={
             <CustomButton
                 color="secondary" 
-                onClick={handleModalClose}
+                onClick={handleModalDlClose}
             >Close</CustomButton>
         }
         btn2={

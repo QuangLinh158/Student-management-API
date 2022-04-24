@@ -185,11 +185,14 @@ const Major = (props) => {
         body = {
             <form>
                 <Input 
+                    type="text"
                     label="Major name" 
                     id="textMajorName" 
                     frmField={formik.getFieldProps("name")}
                     err={formik.touched.name && formik.errors.name}
                     errMessage={formik.errors.name}
+                    lastRow
+                    required
                     // name="name" 
                     // onChange={handleChange} 
                     // defaultValue={major.name} 
@@ -204,7 +207,7 @@ const Major = (props) => {
         btn1={
             <CustomButton
                 color="secondary" 
-                onClick={handleModalClose}
+                onClick={handleModalDlClose}
             >Close</CustomButton>
         }
         btn2={

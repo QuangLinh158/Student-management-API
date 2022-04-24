@@ -307,7 +307,7 @@ const Student = () => {
             btn1={
                 <CustomButton
                     color="secondary" 
-                    onClick={handleModalClose}
+                    onClick={handleModalDlClose}
                 >Close</CustomButton>
             }
             btn2={
