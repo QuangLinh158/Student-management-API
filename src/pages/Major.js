@@ -6,26 +6,71 @@ import ModalDisplay from "../components/ModalDisplay";
 import { useFormik } from "formik";
 import * as Yup from 'yup';
 import CustomButton from "../components/CustomButton";
+import {Pagination} from 'react-bootstrap';
+import { DebounceInput } from "react-debounce-input";
 const Major = (props) => {
-
+    //=================panigation============================
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(0);
+    const [pageLength, setPageLength] = useState(10);
+    const [pagingItems, setPagingItems] = useState([]);
+    const handleChangePageLength = (e) => {
+        setPage(0);
+        setPageLength(e.target.value);
+    };
+    const handleChangeSearch = (e) => {
+        setSearch(e.target.value);
+    };
     //============== Waiting ====================
     const [isWaiting, setIsWaiting] = useState(false);
     //============== getListMajor ================
     const [majors, setMajors] = useState([]);
     const loadData = () => {
-        majorService.list().then((res) => {
+        // majorService.list().then((res) => {
+        //     setMajors(res.data);
+        // });
+        majorService.getPaging(page, pageLength, search).then((res) => {
             setMajors(res.data);
+            let items = [];
+            const totalPages = res.pagingInfo.totalPages;
+            if(totalPages > 1){
+                items = [
+                    <Pagination.Item key="first" onClick={() => setPage(0)}>
+                        &laquo;
+                    </Pagination.Item>,
+                    <Pagination.Item key="prev" disabled={page === 0} onClick={() => setPage(page - 1)} >
+                        &lsaquo;
+                    </Pagination.Item>
+                ];
+            for(let i= 0; i< totalPages; i++){
+                items.push(
+                    <Pagination.Item key={i} active={i === page} onClick={() => setPage(i)} >
+                        {i+1}
+                    </Pagination.Item>
+                );
+            };
+            items.push(
+                <Pagination.Item key="next" disabled={page === totalPages -1} onClick={() => setPage(page + 1)}>
+                    &rsaquo;
+                </Pagination.Item>,
+                <Pagination.Item key="last" onClick={() => setPage(totalPages - 1)} >
+                    &raquo;
+                </Pagination.Item>
+            );
+            };
+            setPagingItems(items);
         });
     };
     useEffect(() => {
         loadData();
-    }, []);
+    }, [page, pageLength, search]);
 
     //================ Modal-Save & Edit ====================
     const [major, setMajor] = useState({ id: 0, name: "" });
     const [modalShow, setModalShow] = useState();
     const handleModalClose = () => setModalShow(false);
     const handleModalShow = () => setModalShow(true);
+    
     //showModale Save-Edit
     const showModalHandler = (e,id) => {
         e.preventDefault();
@@ -138,6 +183,34 @@ const Major = (props) => {
                 </div>
             </div>
             <div className="card-body">
+                <div className="row mb-2">
+                    <div className="col">
+                        <div className="row gx-1">
+                            <label className=" col-form-label col-sm-auto ">Show</label>
+                            <div className="col-sm-auto">
+                                <select value={pageLength} style={{width:"80px"}}
+                                    onChange={handleChangePageLength}
+                                    className=" form-select shadow-none"
+                                >
+                                    <option value="10">10</option>
+                                    <option value="20">20</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                            <label className=" col-form-label col-sm-auto">entries</label>
+                        </div>
+                    </div>
+                    <div className=" col-auto ">
+                        <DebounceInput
+                            className="form-control"
+                            minLength={2}
+                            debounceTimeout={300}
+                            value={search}
+                            onChange={handleChangeSearch}
+                        />
+                    </div>
+                </div>
                 <div className="table-responsive">
                     <table className="table table-bordered border-primary table-hover table-striped">
                         <thead>
@@ -161,6 +234,9 @@ const Major = (props) => {
                         </tbody>
                     </table>
                 </div>
+                <Pagination className="mt-3 mb-0 justify-content-end">
+                    {pagingItems}
+                </Pagination>
             </div>
         </div>
     

@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import { toast } from 'react-toastify';
 import ModalDisplay from "../components/ModalDisplay";
 import Input from "../components/Input";
@@ -9,21 +9,77 @@ import studentService from './../services/studentService';
 import SelectInput from '../components/SelectInput';
 import majorService from './../services/majorService';
 import CustomButton from '../components/CustomButton';
-
+import Utils from './../helpers/utils';
+import {Pagination} from 'react-bootstrap';
+import { DebounceInput } from "react-debounce-input";
 const Student = () => {
-
+     //=================panigation============================
+     const [search, setSearch] = useState("");
+     const [page, setPage] = useState(0);
+     const [pageLength, setPageLength] = useState(10);
+     const [pagingItems, setPagingItems] = useState([]);
+     const handleChangePageLength = (e) => {
+         setPage(0);
+         setPageLength(e.target.value);
+     };
+     const handleChangeSearch = (e) => {
+         setSearch(e.target.value);
+     };
+    const defaultImgUrl = "http://cdn.onlinewebfonts.com/svg/img_211436.png";
+    const [imagePreview, setImagePreview] = useState(defaultImgUrl);
+    const inputFileRef = useRef();
+    const handleChangeImage = (e) => {
+        if(e.target.files && e.target.files[0]){
+            setImagePreview(URL.createObjectURL(e.target.files[0]));
+            formik.setFieldValue("avatar", e.target.files[0]);
+        }
+    };
+    const downloadImage = () => {
+        studentService.downloadAvatar(formik.values.id).then((res) => {
+            if(res.size > 0) Utils.downloadFile(`${formik.values.stuId}.zip`,res);
+            else toast.warning("No avatar to download");
+        })
+    }
     //============== Waiting ====================
     const [isWaiting, setIsWaiting] = useState(false);
     //============== getlist ===============
     const [students, setStudents] = useState([]);
     const loadData = () => {
-        studentService.list().then((res) => {
+        studentService.getPaging(page, pageLength, search).then((res) => {
             setStudents(res.data);
+            let items = [];
+            const totalPages = res.pagingInfo.totalPages;
+            if(totalPages > 1){
+                items = [
+                    <Pagination.Item key="first" onClick={() => setPage(0)}>
+                        &laquo;
+                    </Pagination.Item>,
+                    <Pagination.Item key="prev" disabled={page === 0} onClick={() => setPage(page - 1)} >
+                        &lsaquo;
+                    </Pagination.Item>
+                ];
+            for(let i= 0; i< totalPages; i++){
+                items.push(
+                    <Pagination.Item key={i} active={i === page} onClick={() => setPage(i)} >
+                        {i+1}
+                    </Pagination.Item>
+                );
+            };
+            items.push(
+                <Pagination.Item key="next" disabled={page === totalPages -1} onClick={() => setPage(page + 1)}>
+                    &rsaquo;
+                </Pagination.Item>,
+                <Pagination.Item key="last" onClick={() => setPage(totalPages - 1)} >
+                    &raquo;
+                </Pagination.Item>
+            );
+            };
+            setPagingItems(items);
         });
     };
     useEffect(() => {
         loadData();
-    }, []);
+    }, [page, pageLength, search]);
     //=========== get major id ================
     const [major, setMajor] = useState([]);
     const loadMajor = () => {
@@ -44,6 +100,7 @@ const Student = () => {
         phone:"",
         email:"",
         majorId:0,
+        avatar: undefined,
     });
     const [modalShow, setModalShow] = useState();
     const handleModalClose = () => setModalShow(false);
@@ -52,24 +109,35 @@ const Student = () => {
     const showModalHandler = (e,id) => {
         e.preventDefault();
         if( id > 0 ){
+            studentService.getAvatarUrl(id).then((res) => {
+                if(res.errorCode === 0) setImagePreview(res.data);
+                else setImagePreview(defaultImgUrl);
+            });
             studentService.get(id).then((res) => {
                 // setInstructorr(res.data);
                 formik.setValues(res.data);
                 handleModalShow();
             });
+            // const avatarReq = studentService.getAvatar(id);
+            // const studentReq = studentService.get(id);
+            // api.promise([avatarReq, studentReq]).then(
+            //     api.spread((...res) => {
+            //         if(res[0].size>0) setImagePreview(URL.createObjectURL(res));
+            //         else setImagePreview(defaultImgUrl);
+            //         formik.setValues(res[1].data);
+            //         handleModalShow();
+            //     })
+            // );
         }
         else{
             // setInstructorr({id:0, name:""});
+            setImagePreview(defaultImgUrl);
             formik.resetForm();
             handleModalShow();
         }
     };
     const radioChange = (e) => {
-        // const newInstructor = {...instructorr};
-        // newInstructor[e.target.name] = parseInt(e.target.value);
-        // setInstructorr(newInstructor);
         formik.setFieldValue("gender", parseInt(e.target.value));
-        // console.log(e.target.value);
     };
     //validation
     const formik = useFormik({
@@ -82,6 +150,7 @@ const Student = () => {
             phone:"",
             email:"",
             majorId:0,
+            avatar: undefined,
         },
         validationSchema: Yup.object({
             id: Yup.number().required(),
@@ -100,6 +169,7 @@ const Student = () => {
 
     //Save-Edit function
     const handleSave = (data) => {
+        console.log(data);
         //them major
         setIsWaiting(true);
          if(data.id === 0){
@@ -134,7 +204,8 @@ const Student = () => {
        if (e) e.preventDefault();
        if( id > 0 ){
            studentService.get(id).then((res) => {
-               setStudent(res.data);
+            //    setStudent(res.data);
+                formik.setValues(res.data);
                handleModalDlShow();
            });
        }
@@ -147,6 +218,7 @@ const Student = () => {
             phone:"",
             email:"",
             majorId:0,
+            avatar: undefined,
         });
            handleModalDlShow();
        }
@@ -183,6 +255,34 @@ const Student = () => {
                 </div>
             </div>
             <div className="card-body">
+                <div className="row mb-2">
+                    <div className="col">
+                        <div className="row gx-1">
+                            <label className=" col-form-label col-sm-auto ">Show</label>
+                            <div className="col-sm-auto">
+                                <select value={pageLength} style={{width:"80px"}}
+                                    onChange={handleChangePageLength}
+                                    className=" form-select shadow-none"
+                                >
+                                    <option value="10">10</option>
+                                    <option value="20">20</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                            <label className=" col-form-label col-sm-auto">entries</label>
+                        </div>
+                    </div>
+                    <div className=" col-auto ">
+                        <DebounceInput
+                            className="form-control"
+                            minLength={2}
+                            debounceTimeout={300}
+                            value={search}
+                            onChange={handleChangeSearch}
+                        />
+                    </div>
+                </div>
                 <div className="table-responsive">
                     <table className="table table-bordered border-primary table-hover table-striped">
                         <thead>
@@ -216,6 +316,9 @@ const Student = () => {
                         </tbody>
                     </table>
                 </div>
+                <Pagination className="mt-3 mb-0 justify-content-end">
+                    {pagingItems}
+                </Pagination>
                 </div>
             </div>
     {/* ============== Modal =============== */}
@@ -238,7 +341,28 @@ const Student = () => {
         }
         body = {
             <form>
-                <Input label="Instructor Id" id="textInstructorCode" 
+                <div className="row">
+                    <div className='col-sm-4'>
+                        <img src={imagePreview} alt=''
+                            className=' img-thumbnail rounded-circle border-primary d-block'
+                        />
+                        <input type="file" accept="image/*" className="d-none" 
+                            ref={inputFileRef} onChange={handleChangeImage}
+                        />
+                        <div className='mt-3 text-center'>
+                            <CustomButton 
+                                color="primary" 
+                                onClick={() => inputFileRef.current.click()}
+                            >Change</CustomButton>
+                            <CustomButton 
+                                color="warning"
+                                onClick={downloadImage}
+                            >Download</CustomButton>
+                        </div>  
+                    </div>
+
+                    <div className='col-sm-8'>
+                    <Input label="Instructor Id" id="textInstructorCode" 
                     // name="code" onChange={handleChange} defaultValue={instructorr.code}  
                     frmField={formik.getFieldProps("stuId")}
                     err={formik.touched.stuId && formik.errors.stuId}
@@ -286,17 +410,17 @@ const Student = () => {
                 <SelectInput 
                     label="Major name"
                     opselect = "Chon major"
-                    // value = "1"
-                    // opvalue = "1"
                     frmField={formik.getFieldProps("majorId")}
                     optionn={
-                        major.map((item)=>{
+                        major.map((item,idx)=>{
                             return(
-                                <option value={item.id}>{item.name}</option>
+                                <option key={idx} value={item.id}>{item.name}</option>
                             )
                         })
                     }
                  />
+                    </div>
+                </div>
             </form>
             }
         />
